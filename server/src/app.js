@@ -1,37 +1,47 @@
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
+
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import prisma from "./config/database.js";
 
 const app = express();
 
-// Security headers
 app.use(helmet());
+app.use(cors({
+  origin: "http://localhost:5173",
+}));
 
-// Parse JSON request bodies
 app.use(express.json());
 
-// Allow frontend requests during development
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-  })
-);
-
-// Welcome endpoint
 app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
+  res.json({
     message: "Welcome to BalanceVault API",
   });
 });
 
-// Health endpoint
 app.get("/api/health", (req, res) => {
-  res.status(200).json({
-    success: true,
+  res.json({
     status: "healthy",
-    service: "BalanceVault Backend",
+    message: "BalanceVault API is running",
   });
 });
+app.get("/api/db-health", async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
 
-module.exports = app;
+    res.json({
+      status: "healthy",
+      database: "connected",
+      message: "PostgreSQL connection successful",
+    });
+  } catch (error) {
+    console.error("Database connection failed:", error);
+
+    res.status(500).json({
+      status: "unhealthy",
+      database: "disconnected",
+    });
+  }
+});
+
+export default app;

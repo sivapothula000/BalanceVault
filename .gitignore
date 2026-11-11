@@ -4,3 +4,7 @@ node_modules/
 !.env.example
 dist/
 coverage/
+server/.agents/
+server/.claude/
+server/.windsurf/
+server/skills-lock.json
