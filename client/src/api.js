@@ -1,5 +1,5 @@
 const apiBaseUrl = (
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"
+  import.meta.env.VITE_API_URL || "http://localhost:5000"
 ).replace(/\/+$/, "");
 
 export async function apiRequest(path, { method = "GET", token, body } = {}) {
@@ -11,7 +11,7 @@ export async function apiRequest(path, { method = "GET", token, body } = {}) {
     headers["Content-Type"] = "application/json";
   }
 
-  const response = await fetch(`${apiBaseUrl}${path}`, {
+  const response = await fetch(`${apiBaseUrl}/api${path}`, {
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
