@@ -4,8 +4,11 @@ import { after, test } from "node:test";
 
 process.env.DATABASE_URL ??= "postgresql://test:test@localhost:5433/balancevault";
 const previousSecret = process.env.JWT_SECRET;
+const previousCorsOrigin = process.env.CORS_ORIGIN;
 const testSecret = randomBytes(32).toString("hex");
 process.env.JWT_SECRET = testSecret;
+process.env.CORS_ORIGIN =
+  "http://localhost:5173,https://balance-vault-red.vercel.app";
 
 const [{ default: jwt }, { default: prisma }, { default: app }] =
   await Promise.all([
@@ -32,6 +35,12 @@ after(async () => {
   } else {
     process.env.JWT_SECRET = previousSecret;
   }
+
+  if (previousCorsOrigin === undefined) {
+    delete process.env.CORS_ORIGIN;
+  } else {
+    process.env.CORS_ORIGIN = previousCorsOrigin;
+  }
 });
 
 function createToken(role, userId = "test-user-id", options = {}) {
@@ -45,6 +54,47 @@ function stubFindUnique(t, implementation) {
     prisma.user.findUnique = original;
   });
 }
+
+test("CORS allows configured origins and expected preflight methods and headers", async () => {
+  const methods = ["POST", "GET", "PATCH", "PUT", "DELETE"];
+
+  for (const origin of [
+    "http://localhost:5173",
+    "https://balance-vault-red.vercel.app",
+  ]) {
+    for (const method of methods) {
+      const response = await fetch(`${baseUrl}/api/auth/login`, {
+        method: "OPTIONS",
+        headers: {
+          Origin: origin,
+          "Access-Control-Request-Method": method,
+          "Access-Control-Request-Headers": "authorization,content-type",
+        },
+      });
+
+      assert.equal(response.status, 204);
+      assert.equal(response.headers.get("access-control-allow-origin"), origin);
+      assert.ok(response.headers.get("access-control-allow-methods").includes(method));
+      assert.deepEqual(
+        response.headers.get("access-control-allow-headers").toLowerCase().split(/\s*,\s*/),
+        ["authorization", "content-type"]
+      );
+      assert.equal(response.headers.get("access-control-allow-credentials"), null);
+    }
+  }
+});
+
+test("CORS does not allow unconfigured origins", async () => {
+  const response = await fetch(`${baseUrl}/api/auth/login`, {
+    method: "OPTIONS",
+    headers: {
+      Origin: "https://not-balancevault.example",
+      "Access-Control-Request-Method": "POST",
+    },
+  });
+
+  assert.equal(response.headers.get("access-control-allow-origin"), null);
+});
 
 test("protected routes reject a missing token", async () => {
   const response = await fetch(`${baseUrl}/api/auth/me`);

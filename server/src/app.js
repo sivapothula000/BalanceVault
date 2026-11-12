@@ -12,9 +12,22 @@ import ledgerRoutes from "./routes/ledger.routes.js";
 
 const app = express();
 
+const defaultCorsOrigins = [
+  "http://localhost:5173",
+  "https://balance-vault-red.vercel.app",
+];
+const corsOrigins = (process.env.CORS_ORIGIN || defaultCorsOrigins.join(","))
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(helmet());
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin(origin, callback) {
+    callback(null, !origin || corsOrigins.includes(origin));
+  },
+  methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Authorization", "Content-Type"],
 }));
 
 app.use(express.json());
