@@ -5,6 +5,9 @@ import helmet from "helmet";
 import prisma from "./config/database.js";
 import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import accountRoutes from "./routes/account.routes.js";
+import transferRoutes from "./routes/transfer.routes.js";
+import ledgerRoutes from "./routes/ledger.routes.js";
 
 
 const app = express();
@@ -17,6 +20,9 @@ app.use(cors({
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/accounts", accountRoutes);
+app.use("/api/transfers", transferRoutes);
+app.use("/api/ledger", ledgerRoutes);
 
 app.get("/", (req, res) => {
   res.json({

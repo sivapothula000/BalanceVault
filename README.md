@@ -73,6 +73,38 @@ curl http://localhost:5000/api/admin/dashboard \
   -H "Authorization: Bearer <ADMIN_JWT_TOKEN>"
 ```
 
+## Accounts
+
+- `POST /api/accounts` creates a zero-balance `PENDING` account for the
+  authenticated customer.
+- `GET /api/accounts` lists the authenticated customer's accounts. Admins see
+  all accounts.
+- `PATCH /api/admin/accounts/<ACCOUNT_ID>/activate` activates a pending account
+  and is restricted to admins.
+
+All three endpoints require a bearer token. Customers cannot activate accounts
+or list other customers' accounts.
+
+## Transfers
+
+`POST /api/transfers` requires an authenticated customer and active source and
+destination accounts. Send the amount as a decimal string to preserve cents:
+
+```sh
+curl -X POST http://localhost:5000/api/transfers \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"sourceAccountId":"<SOURCE_ACCOUNT_ID>","destinationAccountNo":"<DESTINATION_ACCOUNT_NO>","amount":"12.50"}'
+```
+
+Successful transfers update both account balances and create matching debit
+and credit ledger entries atomically.
+
+## Ledger
+
+`GET /api/ledger` requires a bearer token. Customers see entries only for their
+own accounts; admins can see all entries.
+
 ## Health checks
 
 - `GET /api/health` checks that the API is responding.
