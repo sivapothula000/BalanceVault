@@ -1,6 +1,43 @@
+import { isMoneyAmount } from "./money.js";
+
 const apiBaseUrl = (
   import.meta.env.VITE_API_URL || "http://localhost:5000"
 ).replace(/\/+$/, "");
+
+function validateAccountsResponse(result) {
+  const statuses = ["PENDING", "ACTIVE", "SUSPENDED"];
+  if (
+    !Array.isArray(result?.accounts) ||
+    result.accounts.some((account) =>
+      !account ||
+      typeof account.id !== "string" ||
+      typeof account.accountNo !== "string" ||
+      !statuses.includes(account.status) ||
+      !isMoneyAmount(account.balance)
+    )
+  ) {
+    throw new Error("Account data is invalid. Refresh the dashboard or contact support.");
+  }
+  return result;
+}
+
+function validateLedgerResponse(result) {
+  if (
+    !Array.isArray(result?.entries) ||
+    result.entries.some((entry) =>
+      !entry ||
+      typeof entry.id !== "string" ||
+      typeof entry.transferId !== "string" ||
+      !["DEBIT", "CREDIT"].includes(entry.type) ||
+      !isMoneyAmount(entry.amount) ||
+      !Number.isFinite(Date.parse(entry.createdAt)) ||
+      typeof entry.account?.accountNo !== "string"
+    )
+  ) {
+    throw new Error("Ledger data is invalid. Refresh the page or contact support.");
+  }
+  return result;
+}
 
 export async function apiRequest(path, { method = "GET", token, body } = {}) {
   const headers = {};
@@ -36,7 +73,8 @@ export const api = {
     apiRequest("/auth/register", { method: "POST", body }),
   login: (body) => apiRequest("/auth/login", { method: "POST", body }),
   getCurrentUser: (token) => apiRequest("/auth/me", { token }),
-  getAccounts: (token) => apiRequest("/accounts", { token }),
+  getAccounts: async (token) =>
+    validateAccountsResponse(await apiRequest("/accounts", { token })),
   createAccount: (token) =>
     apiRequest("/accounts", { method: "POST", token, body: {} }),
   activateAccount: (token, accountId) =>
@@ -46,5 +84,6 @@ export const api = {
     }),
   createTransfer: (token, body) =>
     apiRequest("/transfers", { method: "POST", token, body }),
-  getLedger: (token) => apiRequest("/ledger", { token }),
+  getLedger: async (token) =>
+    validateLedgerResponse(await apiRequest("/ledger", { token })),
 };

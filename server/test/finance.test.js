@@ -222,6 +222,7 @@ test("a customer creates a zero-balance pending account owned by their token", a
     return {
       id: "new-account-id",
       ...args.data,
+      balance: new Prisma.Decimal(args.data.balance),
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
       updatedAt: new Date("2026-01-01T00:00:00.000Z"),
     };
@@ -244,7 +245,7 @@ test("a customer creates a zero-balance pending account owned by their token", a
   assert.equal(new Prisma.Decimal(createArgs.data.balance).isZero(), true);
   assert.match(createArgs.data.accountNo, /^\d{12}$/);
   assert.equal(body.account.userId, customerId);
-  assert.equal(new Prisma.Decimal(body.account.balance).isZero(), true);
+  assert.equal(body.account.balance, "0.00");
 });
 
 test("a customer cannot activate an account", async (t) => {
@@ -297,6 +298,7 @@ test("an admin can activate a pending account", async (t) => {
     status: "PENDING",
   });
   assert.equal(body.account.status, "ACTIVE");
+  assert.equal(body.account.balance, "0.00");
 });
 
 test("a customer only sees their own accounts", async (t) => {
@@ -320,6 +322,7 @@ test("a customer only sees their own accounts", async (t) => {
   assert.equal(response.status, 200);
   assert.deepEqual(query.where, { userId: customerId });
   assert.deepEqual(body.accounts.map((item) => item.id), ["customer-account"]);
+  assert.equal(body.accounts[0].balance, "12.34");
 });
 
 test("an admin can list accounts across customers", async (t) => {
@@ -591,6 +594,7 @@ test("customers only see ledger entries for their own accounts", async (t) => {
     "customer-account",
   ]);
   assert.equal("userId" in body.entries[0], false);
+  assert.equal(body.entries[0].amount, "2.50");
 });
 
 test("admins can see ledger entries across all accounts", async (t) => {

@@ -11,6 +11,13 @@ const accountSelect = {
   updatedAt: true,
 };
 
+function serializeAccount(account) {
+  return {
+    ...account,
+    balance: account.balance.toFixed(2),
+  };
+}
+
 export const createAccount = async (req, res) => {
   try {
     const account = await prisma.account.create({
@@ -25,7 +32,7 @@ export const createAccount = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      account,
+      account: serializeAccount(account),
     });
   } catch (error) {
     if (error?.code === "P2002") {
@@ -57,7 +64,7 @@ export const listAccounts = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      accounts,
+      accounts: accounts.map(serializeAccount),
     });
   } catch (error) {
     console.error(
@@ -107,7 +114,7 @@ export const activateAccount = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      account,
+      account: serializeAccount(account),
     });
   } catch (error) {
     console.error(

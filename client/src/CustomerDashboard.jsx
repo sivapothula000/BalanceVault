@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "./api.js";
-import { formatMoney, sumMoney } from "./money.js";
+import { formatMinorUnits, formatMoney, sumMoney } from "./money.js";
 
 function formatDate(value) {
   return new Intl.DateTimeFormat(undefined, {
@@ -164,8 +164,10 @@ export default function CustomerDashboard({ session, onNavigate }) {
           <span className="balance-label">TOTAL ACTIVE BALANCE</span>
           {loading ? (
             <div className="balance-loading" aria-label="Loading balance" />
+          ) : error ? (
+            <strong>Unavailable</strong>
           ) : (
-            <strong>{formatMoney(totalBalance)}</strong>
+            <strong>{formatMinorUnits(totalBalance)}</strong>
           )}
           <span className="balance-caption">
             Across {activeAccounts.length} active {activeAccounts.length === 1 ? "account" : "accounts"}

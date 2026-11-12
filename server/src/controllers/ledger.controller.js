@@ -28,7 +28,10 @@ export const listLedgerEntries = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      entries,
+      entries: entries.map((entry) => ({
+        ...entry,
+        amount: entry.amount.toFixed(2),
+      })),
     });
   } catch (error) {
     console.error(
